@@ -43,3 +43,14 @@ All normal diagnostics are concise text records. An invalid depth region is
 printed as `distance_m=unknown`; it is never converted to zero metres or clear
 space. See [the Depth notes](docs/depth-service.md) for the diagnostic
 contract and physical test checklist.
+
+## Perception live perception
+
+```bash
+./build/raksh_perception_service --output-hz 10
+python3 scripts/validate_perception.py ./build/raksh_perception_service
+```
+
+The service writes one JSON object per current live update with exactly 96
+depth-cone cells, 48 rays, and optional obstacle clusters. Details and current
+calibration limits are in [the Perception notes](docs/perception.md).

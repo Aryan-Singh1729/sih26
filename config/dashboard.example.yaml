@@ -42,9 +42,31 @@ emeet:
 
 perception:
   calibration_required: true
-  # Perception will add measured camera mounting parameters, display range,
-  # floor rejection, and risk thresholds. Missing values must fail closed;
-  # they must not be replaced with simulated defaults.
+  depth_cone:
+    columns: 16
+    rows: 6
+    near_percentile: 0.20
+    minimum_valid_ratio: 0.20
+  rays:
+    count: 48
+    sample_radius_pixels: 5
+  valid_range_m:
+    minimum: 0.05
+    maximum: 5.0
+  camera_mount:
+    height_m: 0.40
+    pitch_down_degrees: 0.0
+  floor_tolerance_m: 0.04
+  risk_thresholds_m:
+    critical: 0.45
+    close: 0.90
+    intermediate: 1.80
+  smoothing_alpha: 0.25
+  risk_hysteresis_m: 0.05
+  cluster_range_tolerance_m: 0.25
+  maximum_cluster_gap_rays: 1
+  # Mount values and risk distances are operational defaults. Measure and
+  # calibrate them on the assembled robot before safety-critical use.
 
 server:
   # Server will set these after the transport and local network interface

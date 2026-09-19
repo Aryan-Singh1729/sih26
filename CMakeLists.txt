@@ -17,6 +17,7 @@ find_package(Threads REQUIRED)
 add_library(raksh_depth_core
     src/depth_sampler.cpp
     src/depth_state.cpp
+    src/perception.cpp
 )
 target_include_directories(raksh_depth_core PUBLIC include)
 target_link_libraries(raksh_depth_core PUBLIC Threads::Threads)
@@ -43,6 +44,13 @@ if(RAKSH_BUILD_REALSENSE_SERVICE)
         realsense2::realsense2
     )
     target_compile_options(raksh_depth_service PRIVATE -Wall -Wextra -Wpedantic)
+
+    add_executable(raksh_perception_service src/perception_service.cpp)
+    target_link_libraries(raksh_perception_service PRIVATE
+        raksh_depth_core
+        realsense2::realsense2
+    )
+    target_compile_options(raksh_perception_service PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
 if(RAKSH_BUILD_TESTS)
@@ -54,4 +62,8 @@ if(RAKSH_BUILD_TESTS)
     add_executable(depth_state_test tests/depth_state_test.cpp)
     target_link_libraries(depth_state_test PRIVATE raksh_depth_core)
     add_test(NAME depth_state_test COMMAND depth_state_test)
+
+    add_executable(perception_test tests/perception_test.cpp)
+    target_link_libraries(perception_test PRIVATE raksh_depth_core)
+    add_test(NAME perception_test COMMAND perception_test)
 endif()
