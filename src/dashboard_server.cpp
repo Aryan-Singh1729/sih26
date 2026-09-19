@@ -50,6 +50,15 @@ struct Options {
     unsigned camera_width{640};
     unsigned camera_height{360};
     unsigned camera_fps{20};
+    float camera_mount_height_m{0.40F};
+    float camera_pitch_down_deg{0.0F};
+    float minimum_distance_m{0.05F};
+    float maximum_distance_m{5.0F};
+    float floor_tolerance_m{0.04F};
+    float risk_critical_m{0.45F};
+    float risk_close_m{0.90F};
+    float risk_intermediate_m{1.80F};
+    bool reject_floor{true};
 };
 
 Options parse_options(int argc, char** argv) {
@@ -69,11 +78,30 @@ Options parse_options(int argc, char** argv) {
         else if (argument == "--camera-width") result.camera_width = std::stoul(value());
         else if (argument == "--camera-height") result.camera_height = std::stoul(value());
         else if (argument == "--camera-fps") result.camera_fps = std::stoul(value());
+        else if (argument == "--camera-height-m") result.camera_mount_height_m = std::stof(value());
+        else if (argument == "--camera-pitch-deg") result.camera_pitch_down_deg = std::stof(value());
+        else if (argument == "--minimum-distance-m") result.minimum_distance_m = std::stof(value());
+        else if (argument == "--maximum-distance-m") result.maximum_distance_m = std::stof(value());
+        else if (argument == "--floor-tolerance-m") result.floor_tolerance_m = std::stof(value());
+        else if (argument == "--risk-critical-m") result.risk_critical_m = std::stof(value());
+        else if (argument == "--risk-close-m") result.risk_close_m = std::stof(value());
+        else if (argument == "--risk-intermediate-m") result.risk_intermediate_m = std::stof(value());
+        else if (argument == "--show-floor") result.reject_floor = false;
         else throw std::invalid_argument("unknown option: " + argument);
     }
     if (result.port == 0 || result.port > 65535) throw std::invalid_argument("invalid port");
     if (!result.camera_width || !result.camera_height || !result.camera_fps)
         throw std::invalid_argument("invalid camera mode");
+    if (result.minimum_distance_m <= 0 ||
+        result.maximum_distance_m <= result.minimum_distance_m)
+        throw std::invalid_argument("invalid perception distance range");
+    if (!(result.risk_critical_m > result.minimum_distance_m &&
+          result.risk_close_m > result.risk_critical_m &&
+          result.risk_intermediate_m > result.risk_close_m &&
+          result.maximum_distance_m > result.risk_intermediate_m))
+        throw std::invalid_argument("risk thresholds must be strictly increasing");
+    if (result.camera_mount_height_m <= 0 || result.floor_tolerance_m < 0)
+        throw std::invalid_argument("invalid camera mount calibration");
     return result;
 }
 
@@ -331,8 +359,17 @@ void capture(std::shared_ptr<LatestState> state, const Options& options) {
                                            (2.0F * intrinsics.fx));
         raksh::PerceptionConfig config;
         config.ray_count = 48;
+        config.minimum_distance_m = options.minimum_distance_m;
+        config.maximum_distance_m = options.maximum_distance_m;
+        config.floor_tolerance_m = options.floor_tolerance_m;
+        config.risk.critical_m = options.risk_critical_m;
+        config.risk.close_m = options.risk_close_m;
+        config.risk.intermediate_m = options.risk_intermediate_m;
         raksh::TemporalRayFilter filter(config.ray_count, config);
         raksh::CameraMount mount;
+        mount.height_m = options.camera_mount_height_m;
+        mount.pitch_down_rad = options.camera_pitch_down_deg *
+                               3.14159265358979323846F / 180.0F;
         std::uint64_t frame_count = 0;
         auto fps_time = std::chrono::steady_clock::now();
         auto next_publish = fps_time;
@@ -367,7 +404,8 @@ void capture(std::shared_ptr<LatestState> state, const Options& options) {
                 return raksh::Point3D{point[0], point[1], point[2]};
             };
             const auto cells = raksh::build_depth_cone(image, timestamp, config);
-            auto rays = raksh::build_rays(image, timestamp, config, deproject, mount, true);
+            auto rays = raksh::build_rays(image, timestamp, config, deproject, mount,
+                                          options.reject_floor);
             rays = filter.update(rays);
             const auto clusters = raksh::cluster_rays(rays, config);
             Snapshot snapshot;

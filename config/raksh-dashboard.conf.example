@@ -1,0 +1,25 @@
+# Runtime settings loaded by scripts/run_dashboard.sh.
+# Copy to config/raksh-dashboard.conf on the UNO Q and calibrate the mount and
+# thresholds against tape-measured obstacles before safety-critical operation.
+
+BIND_ADDRESS=127.0.0.1
+PORT=8080
+SR300_SERIAL=617205001375
+WEB_ROOT=web
+EMEET_DEVICE=/dev/v4l/by-id/usb-Sonix_Technology_Co.__Ltd._EMEET_SmartCam_C950_A260409000103685-video-index0
+EMEET_WIDTH=640
+EMEET_HEIGHT=360
+EMEET_FPS=20
+
+CAMERA_HEIGHT_M=0.40
+CAMERA_PITCH_DEG=0.0
+MINIMUM_DISTANCE_M=0.05
+MAXIMUM_DISTANCE_M=5.0
+FLOOR_TOLERANCE_M=0.04
+RISK_CRITICAL_M=0.45
+RISK_CLOSE_M=0.90
+RISK_INTERMEDIATE_M=1.80
+
+LOG_DIRECTORY=/tmp/raksh-dashboard
+LOG_MAX_BYTES=524288
+LOG_KEEP=3

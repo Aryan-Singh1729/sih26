@@ -81,3 +81,15 @@ Validate both physical cameras together:
 ```bash
 python scripts/validate_camera.py http://10.143.116.243:8080 --frames 10
 ```
+
+## Final hardened launcher
+
+Copy and calibrate the runtime configuration, then use the preflight launcher:
+
+```bash
+cp config/raksh-dashboard.conf.example config/raksh-dashboard.conf
+bash scripts/run_dashboard.sh config/raksh-dashboard.conf
+```
+
+The complete calibration, acceptance, and troubleshooting procedure is in
+[the Deployment operations guide](docs/operations.md).
