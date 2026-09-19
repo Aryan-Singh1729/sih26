@@ -33,6 +33,12 @@ Run the repeatable 15-minute acceptance check:
 bash scripts/validate_depth.sh
 ```
 
+Run the guarded USB disconnect/rebind and restart check:
+
+```bash
+bash scripts/test_depth_disconnect.sh
+```
+
 All normal diagnostics are concise text records. An invalid depth region is
 printed as `distance_m=unknown`; it is never converted to zero metres or clear
 space. See [the Depth notes](docs/depth-service.md) for the diagnostic

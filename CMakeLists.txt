@@ -7,6 +7,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(RAKSH_BUILD_REALSENSE_SERVICE "Build the live SR300 executable" ON)
 option(RAKSH_BUILD_TESTS "Build deterministic unit tests" ON)
+set(REALSENSE_SOURCE_DIR "/mnt/sdcard/librealsense" CACHE PATH
+    "Path to the pinned librealsense 2.50.0 source tree")
+set(REALSENSE_BUILD_DIR "/mnt/sdcard/librealsense/build" CACHE PATH
+    "Path to the pinned librealsense 2.50.0 build tree")
 
 find_package(Threads REQUIRED)
 
@@ -19,11 +23,20 @@ target_link_libraries(raksh_depth_core PUBLIC Threads::Threads)
 target_compile_options(raksh_depth_core PRIVATE -Wall -Wextra -Wpedantic)
 
 if(RAKSH_BUILD_REALSENSE_SERVICE)
-    find_package(realsense2 2.50 REQUIRED CONFIG)
-    if(NOT realsense2_VERSION VERSION_EQUAL "2.50.0")
-        message(FATAL_ERROR
-            "Raksh Depth requires librealsense 2.50.0; found ${realsense2_VERSION}")
+    set(REALSENSE_HEADER "${REALSENSE_SOURCE_DIR}/include/librealsense2/rs.hpp")
+    set(REALSENSE_LIBRARY "${REALSENSE_BUILD_DIR}/librealsense2.so.2.50.0")
+    if(NOT EXISTS "${REALSENSE_HEADER}")
+        message(FATAL_ERROR "Missing librealsense 2.50.0 header: ${REALSENSE_HEADER}")
     endif()
+    if(NOT EXISTS "${REALSENSE_LIBRARY}")
+        message(FATAL_ERROR "Missing librealsense 2.50.0 library: ${REALSENSE_LIBRARY}")
+    endif()
+
+    add_library(realsense2::realsense2 SHARED IMPORTED)
+    set_target_properties(realsense2::realsense2 PROPERTIES
+        IMPORTED_LOCATION "${REALSENSE_LIBRARY}"
+        INTERFACE_INCLUDE_DIRECTORIES "${REALSENSE_SOURCE_DIR}/include"
+    )
     add_executable(raksh_depth_service src/depth_service.cpp)
     target_link_libraries(raksh_depth_service PRIVATE
         raksh_depth_core

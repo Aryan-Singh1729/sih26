@@ -48,13 +48,16 @@ The mount was verified with `findmnt` before using the librealsense build. There
 - Source tag: `v2.50.0`
 - `rs-enumerate-devices` version: `2.50.0`
 
-The RealSense build is usable through its CMake configuration at:
+The RealSense build contains a generated CMake configuration at:
 
 ```text
 /mnt/sdcard/librealsense/build/realsense2Config.cmake
 ```
 
-It is not installed in the system pkg-config search path. Future builds must use the build-tree CMake configuration or explicitly set the library and include paths.
+It is not installed in the system pkg-config search path. Depth found that
+the generated configuration is not relocatable at the SD-card location: it
+derives `/mnt/include`, which does not exist. Raksh builds must explicitly use
+the source headers and the pinned build-tree shared library instead.
 
 ### Depth endurance result
 

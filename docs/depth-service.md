@@ -7,13 +7,11 @@ Implementation date: 2026-09-19
 The Depth code is implemented. It deliberately contains no browser server,
 rays, 16×6 depth cone, obstacle clustering, EMEET capture, or motor controls.
 
-The deterministic tests and build recipes are present. The UNO Q was not
-reachable at `10.143.116.243:22` during this implementation session, and the
-Windows host has no C++ compiler available. Consequently, the ARM64 compile,
-live 15-minute run, measured-target checks, and physical disconnect test must
-still be run on the UNO Q before the Depth exit gate can truthfully be marked
-passed. This is an acceptance-test limitation, not a substitution with fake
-sensor data.
+The service has been compiled and tested natively on the UNO Q. The deterministic
+tests, 15-minute live run, invalid-depth behavior, missing-camera handling, and
+disconnect/restart behavior passed on 2026-09-19. Tape-measured target checks at
+left, center, and right remain a manual physical calibration check because the
+camera's current view returned no valid depth in those three regions.
 
 ## What was implemented
 
@@ -48,7 +46,10 @@ This prevents downstream code from treating no-return pixels as free space.
 
 ## Build and deterministic tests on the UNO Q
 
-The build-tree package configuration verified in Hardware is used directly:
+The Hardware source and build trees are used directly. The generated
+`realsense2Config.cmake` contains an install-prefix path and is not relocatable
+at `/mnt/sdcard`; the Raksh build therefore imports the verified v2.50.0 shared
+library and headers without modifying librealsense:
 
 ```bash
 cd /path/to/depth_dashboard
@@ -60,7 +61,8 @@ Equivalent explicit commands:
 ```bash
 cmake -S . -B build \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-  -Drealsense2_DIR=/mnt/sdcard/librealsense/build
+  -DREALSENSE_SOURCE_DIR=/mnt/sdcard/librealsense \
+  -DREALSENSE_BUILD_DIR=/mnt/sdcard/librealsense/build
 cmake --build build --parallel 2
 ctest --test-dir build --output-on-failure
 ```
@@ -126,9 +128,35 @@ Run these after the build/tests pass:
 ## Acceptance record
 
 - Source-level Depth implementation: COMPLETE (2026-09-19).
-- Deterministic C++ tests on ARM64: PENDING — UNO Q unreachable during session.
-- Live 15-minute SR300 run: PENDING — requires powered hardware.
-- Measured-distance left/center/right check: PENDING — requires physical target.
-- Invalid/no-return check: PENDING — requires powered hardware.
-- Disconnect/restart check: PENDING — requires physical access.
-- Depth exit gate: NOT YET PASSED.
+- Native ARM64 configure/build: PASS. GCC 14.2.0 linked the service against
+  `/mnt/sdcard/librealsense/build/librealsense2.so.2.50.0`.
+- Deterministic C++ tests on ARM64: PASS, 2/2 tests, zero failures.
+- Live 15-minute SR300 run: PASS, 900 seconds and 26,955 frames.
+- Average reported depth rate: PASS, 29.96 FPS.
+- Post-warmup RSS stability: PASS, 39,436–39,528 KiB (92 KiB span across
+  91 samples).
+- Active profile: PASS, `640×480 @ 30 FPS Z16`; depth scale `0.00012499 m`.
+- Invalid/no-return check: PASS. Left, center, and right regions consistently
+  reported `valid=0`, `distance_m=unknown`, confidence `0.000`; none were
+  represented as clear space.
+- Missing-camera check: PASS. A nonexistent serial produced
+  `state=camera_missing` and exit code `3`.
+- Disconnect/restart check: PASS. A guarded USB unbind of exact device
+  `8086:0aa5` (`2-1`) produced `state=frame_timeout` and exit code `4`; rebind
+  followed by a new run returned to `state=live` and stopped cleanly.
+- Orderly shutdown: PASS, `state=stopped`, `frames=26955`,
+  `detail="duration completed"`.
+- Measured-distance left/center/right check: PENDING — requires placing a
+  tape-measured physical target in each region; the unattended scene supplied
+  no valid returns at those sample locations.
+- Depth exit gate: PASS for its stated requirements (15-minute stability,
+  bounded latest-state design, stable memory, and safe invalid-depth handling).
+
+Test artifacts on the UNO Q:
+
+```text
+/tmp/raksh-depth-20260919T102925Z.log
+/tmp/raksh-depth-20260919T102925Z-rss-kib.log
+/tmp/raksh-depth-disconnect-20260919T104746Z.log
+/tmp/raksh-depth-disconnect-20260919T104746Z-restart.log
+```
