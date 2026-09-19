@@ -1,0 +1,54 @@
+# Raksh dashboard hardware configuration.
+#
+# Hardware records identities and verified capture modes only. Perception and
+# safety thresholds are deliberately omitted until physical calibration in
+# Perception.
+
+schema_version: 1
+
+storage:
+  mount_point: /mnt/sdcard
+  expected_device: /dev/sda1
+  filesystem: ext4
+  filesystem_label: realsense
+  filesystem_uuid: 2d5d8e90-fcaf-4488-be0d-c08eeac752c7
+
+realsense:
+  model: Intel RealSense SR300
+  usb_id: "8086:0aa5"
+  serial: "617205001375"
+  firmware: "3.21.0.0"
+  librealsense_version: "2.50.0"
+  source_path: /mnt/sdcard/librealsense
+  build_path: /mnt/sdcard/librealsense/build
+  stream:
+    type: depth
+    width: 640
+    height: 480
+    frames_per_second: 30
+    pixel_format: Z16
+
+emeet:
+  model: EMEET SmartCam C950
+  usb_id: "328f:00ea"
+  serial: A260409000103685
+  # Never replace this with a hard-coded /dev/videoN path.
+  device_by_id: /dev/v4l/by-id/usb-Sonix_Technology_Co.__Ltd._EMEET_SmartCam_C950_A260409000103685-video-index0
+  stream:
+    width: 640
+    height: 360
+    frames_per_second: 30
+    pixel_format: MJPG
+
+perception:
+  calibration_required: true
+  # Perception will add measured camera mounting parameters, display range,
+  # floor rejection, and risk thresholds. Missing values must fail closed;
+  # they must not be replaced with simulated defaults.
+
+server:
+  # Server will set these after the transport and local network interface
+  # have been selected and tested.
+  bind_address: null
+  port: null
+
