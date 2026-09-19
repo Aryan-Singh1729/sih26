@@ -69,8 +69,9 @@ perception:
   # calibrate them on the assembled robot before safety-critical use.
 
 server:
-  # Server will set these after the transport and local network interface
-  # have been selected and tested.
-  bind_address: null
-  port: null
+  # Loopback is the safe default. Set this to the UNO Q's LAN address when a
+  # dashboard laptop must connect; avoid exposing it on every interface.
+  bind_address: 127.0.0.1
+  port: 8080
+  telemetry_updates_per_second: 10
 

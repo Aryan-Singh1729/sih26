@@ -1,8 +1,9 @@
 # Raksh depth acquisition service
 
-This repository currently contains Hardware hardware inventory and the Depth
-SR300 depth acquisition service. It does not yet contain dashboard rendering,
-rays, a depth cone, webcam streaming, or robot controls.
+This repository contains the Hardware hardware inventory, the Depth SR300
+depth acquisition service, Perception perception products, and the Server local
+HTTP/SSE data server. Browser rendering, webcam streaming, and robot controls
+are intentionally not included yet.
 
 ## Build on the Arduino UNO Q
 
@@ -54,3 +55,18 @@ python3 scripts/validate_perception.py ./build/raksh_perception_service
 The service writes one JSON object per current live update with exactly 96
 depth-cone cells, 48 rays, and optional obstacle clusters. Details and current
 calibration limits are in [the Perception notes](docs/perception.md).
+
+## Server local data server
+
+Bind to the UNO Q's actual LAN address so the dashboard laptop can connect:
+
+```bash
+./build/raksh_dashboard_server \
+  --serial 617205001375 --bind 10.143.116.243 --port 8080
+```
+
+The read-only endpoints are `GET /health` and `GET /events`. The latter is a
+Server-Sent Events stream carrying schema version 1 at approximately 10 Hz.
+There are no control or motor endpoints. See
+[the Server notes](docs/dashboard-server.md) for the message contract and test
+evidence.

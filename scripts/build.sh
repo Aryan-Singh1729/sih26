@@ -23,3 +23,5 @@ cmake --build "${build_dir}" --parallel 2
 ctest --test-dir "${build_dir}" --output-on-failure
 
 printf 'Built: %s\n' "${build_dir}/raksh_depth_service"
+printf 'Built: %s\n' "${build_dir}/raksh_perception_service"
+printf 'Built: %s\n' "${build_dir}/raksh_dashboard_server"

@@ -8,9 +8,10 @@ namespace raksh {
 namespace {
 float percentile(std::vector<float> values, float fraction) {
     if (values.empty()) return 0.0F;
-    std::sort(values.begin(), values.end());
     const auto index = static_cast<std::size_t>(
         std::floor(fraction * static_cast<float>(values.size() - 1)));
+    std::nth_element(values.begin(), values.begin() + static_cast<std::ptrdiff_t>(index),
+                     values.end());
     return values[index];
 }
 

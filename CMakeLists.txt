@@ -51,6 +51,14 @@ if(RAKSH_BUILD_REALSENSE_SERVICE)
         realsense2::realsense2
     )
     target_compile_options(raksh_perception_service PRIVATE -Wall -Wextra -Wpedantic)
+
+    add_executable(raksh_dashboard_server src/dashboard_server.cpp)
+    target_link_libraries(raksh_dashboard_server PRIVATE
+        raksh_depth_core
+        realsense2::realsense2
+        Threads::Threads
+    )
+    target_compile_options(raksh_dashboard_server PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
 if(RAKSH_BUILD_TESTS)
