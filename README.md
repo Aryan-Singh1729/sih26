@@ -71,6 +71,13 @@ There are no control or motor endpoints. See
 [the Server notes](docs/dashboard-server.md) for the message contract and test
 evidence.
 
-Open `http://10.143.116.243:8080/` on the dashboard laptop for the Dashboard
-top-down ray display and live 16×6 depth cone. The EMEET panel is deliberately
-marked unavailable until its independent Camera video pipeline is added.
+Open `http://10.143.116.243:8080/` on the dashboard laptop for the top-down ray
+display, live 16×6 depth cone, and Camera EMEET camera feed. The camera uses
+the stable by-id device path and native MJPEG, so frames are not re-encoded on
+the UNO Q.
+
+Validate both physical cameras together:
+
+```bash
+python scripts/validate_camera.py http://10.143.116.243:8080 --frames 10
+```

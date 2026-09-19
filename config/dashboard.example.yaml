@@ -37,7 +37,7 @@ emeet:
   stream:
     width: 640
     height: 360
-    frames_per_second: 30
+    frames_per_second: 20
     pixel_format: MJPG
 
 perception:
@@ -75,4 +75,5 @@ server:
   port: 8080
   telemetry_updates_per_second: 10
   web_root: web
+  camera_endpoint: /camera.mjpeg
 

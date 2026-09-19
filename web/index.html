@@ -29,12 +29,15 @@
             <span class="eyebrow">FRONT CAMERA</span>
             <h2>EMEET C950</h2>
           </div>
-          <span class="status unavailable">CAMERA</span>
+          <span class="status starting" id="camera-status">STARTING</span>
         </header>
-        <div class="camera-placeholder">
+        <div class="camera-viewport">
+          <img id="camera-feed" src="/camera.mjpeg" alt="Live front-facing EMEET camera">
+          <div class="camera-placeholder" id="camera-placeholder">
           <div class="camera-reticle" aria-hidden="true"></div>
-          <p>LIVE CAMERA RESERVED</p>
-          <span>Video integration follows in Camera</span>
+          <p>CAMERA STARTING</p>
+          <span>Waiting for the EMEET C950</span>
+          </div>
         </div>
       </article>
     </section>

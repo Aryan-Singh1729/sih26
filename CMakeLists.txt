@@ -19,6 +19,11 @@ add_library(raksh_depth_core
     src/depth_state.cpp
     src/perception.cpp
 )
+
+add_library(raksh_camera_core src/emeet_camera.cpp)
+target_include_directories(raksh_camera_core PUBLIC include)
+target_link_libraries(raksh_camera_core PUBLIC Threads::Threads)
+target_compile_options(raksh_camera_core PRIVATE -Wall -Wextra -Wpedantic)
 target_include_directories(raksh_depth_core PUBLIC include)
 target_link_libraries(raksh_depth_core PUBLIC Threads::Threads)
 target_compile_options(raksh_depth_core PRIVATE -Wall -Wextra -Wpedantic)
@@ -55,6 +60,7 @@ if(RAKSH_BUILD_REALSENSE_SERVICE)
     add_executable(raksh_dashboard_server src/dashboard_server.cpp)
     target_link_libraries(raksh_dashboard_server PRIVATE
         raksh_depth_core
+        raksh_camera_core
         realsense2::realsense2
         Threads::Threads
     )

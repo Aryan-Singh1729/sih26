@@ -1,4 +1,5 @@
 #include "raksh/perception.hpp"
+#include "raksh/emeet_camera.hpp"
 
 #include <librealsense2/rs.hpp>
 #include <librealsense2/rsutil.h>
@@ -43,6 +44,12 @@ struct Options {
     unsigned port{8080};
     unsigned duration_seconds{0};
     std::string web_root{"web"};
+    std::string camera_device{
+        "/dev/v4l/by-id/usb-Sonix_Technology_Co.__Ltd._EMEET_SmartCam_C950_"
+        "A260409000103685-video-index0"};
+    unsigned camera_width{640};
+    unsigned camera_height{360};
+    unsigned camera_fps{20};
 };
 
 Options parse_options(int argc, char** argv) {
@@ -58,9 +65,15 @@ Options parse_options(int argc, char** argv) {
         else if (argument == "--port") result.port = std::stoul(value());
         else if (argument == "--duration-seconds") result.duration_seconds = std::stoul(value());
         else if (argument == "--web-root") result.web_root = value();
+        else if (argument == "--camera-device") result.camera_device = value();
+        else if (argument == "--camera-width") result.camera_width = std::stoul(value());
+        else if (argument == "--camera-height") result.camera_height = std::stoul(value());
+        else if (argument == "--camera-fps") result.camera_fps = std::stoul(value());
         else throw std::invalid_argument("unknown option: " + argument);
     }
     if (result.port == 0 || result.port > 65535) throw std::invalid_argument("invalid port");
+    if (!result.camera_width || !result.camera_height || !result.camera_fps)
+        throw std::invalid_argument("invalid camera mode");
     return result;
 }
 
@@ -160,11 +173,15 @@ std::string error_telemetry(const Snapshot& snapshot) {
     return out.str();
 }
 
-std::string health_json(const Snapshot& snapshot) {
+std::string health_json(const Snapshot& snapshot,
+                        const raksh::CameraSnapshot& camera) {
     const auto now = monotonic_ms();
     const auto age = snapshot.timestamp_ms && now >= snapshot.timestamp_ms
                          ? now - snapshot.timestamp_ms : 0;
     const bool stale = snapshot.state == "live" && age > 1000;
+    const auto camera_age = camera.timestamp_ms && now >= camera.timestamp_ms
+                                ? now - camera.timestamp_ms : 0;
+    const bool camera_stale = camera.state == "live" && camera_age > 1500;
     std::ostringstream out;
     out << std::fixed << std::setprecision(2)
         << "{\"service_state\":\"" << (stale ? "stale" : snapshot.state)
@@ -172,7 +189,12 @@ std::string health_json(const Snapshot& snapshot) {
         << "\",\"last_frame_number\":" << snapshot.frame
         << ",\"last_frame_age_ms\":" << age
         << ",\"depth_fps\":" << snapshot.fps
-        << ",\"emeet_state\":\"unavailable_until_milestone_6\"}";
+        << ",\"emeet_state\":\"" << (camera_stale ? "stale" : camera.state)
+        << "\",\"emeet_frame_number\":" << camera.frame_number
+        << ",\"emeet_frame_age_ms\":" << camera_age
+        << ",\"emeet_fps\":" << camera.fps
+        << ",\"emeet_width\":" << camera.width
+        << ",\"emeet_height\":" << camera.height << '}';
     return out.str();
 }
 
@@ -228,7 +250,32 @@ bool serve_dashboard_asset(int socket, const std::string& request,
     return false;
 }
 
+void stream_camera(int socket, const std::shared_ptr<raksh::LatestCamera>& camera) {
+    if (!send_all(socket,
+        "HTTP/1.1 200 OK\r\n"
+        "Content-Type: multipart/x-mixed-replace; boundary=rakshframe\r\n"
+        "Cache-Control: no-store, no-cache, must-revalidate\r\n"
+        "Pragma: no-cache\r\nConnection: close\r\n"
+        "Access-Control-Allow-Origin: *\r\n\r\n")) return;
+    std::uint64_t generation = 0;
+    while (!stop_requested.load()) {
+        const auto frame = camera->wait_after(generation, stop_requested);
+        if (frame.generation == generation) continue;
+        generation = frame.generation;
+        if (!frame.jpeg || frame.jpeg->empty()) continue;
+        std::ostringstream header;
+        header << "--rakshframe\r\nContent-Type: image/jpeg\r\nContent-Length: "
+               << frame.jpeg->size() << "\r\nX-Frame-Number: " << frame.frame_number
+               << "\r\nX-Timestamp-Ms: " << frame.timestamp_ms << "\r\n\r\n";
+        if (!send_all(socket, header.str())) break;
+        const std::string bytes(reinterpret_cast<const char*>(frame.jpeg->data()),
+                                frame.jpeg->size());
+        if (!send_all(socket, bytes) || !send_all(socket, "\r\n")) break;
+    }
+}
+
 void handle_client(int socket, std::shared_ptr<LatestState> state,
+                   std::shared_ptr<raksh::LatestCamera> camera,
                    std::string web_root) {
     timeval timeout{2, 0};
     setsockopt(socket, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
@@ -236,10 +283,13 @@ void handle_client(int socket, std::shared_ptr<LatestState> state,
     const auto count = recv(socket, buffer, sizeof(buffer) - 1, 0);
     if (count <= 0) { close(socket); return; }
     const std::string request(buffer, static_cast<std::size_t>(count));
-    if (serve_dashboard_asset(socket, request, web_root)) {
+    if (request.rfind("GET /camera.mjpeg ", 0) == 0) {
+        stream_camera(socket, camera);
+    } else if (serve_dashboard_asset(socket, request, web_root)) {
         // Response already sent.
     } else if (request.rfind("GET /health ", 0) == 0) {
-        respond(socket, "200 OK", "application/json", health_json(state->get()));
+        respond(socket, "200 OK", "application/json",
+                health_json(state->get(), camera->get()));
     } else if (request.rfind("GET /events ", 0) == 0) {
         if (!send_all(socket,
             "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\n"
@@ -355,7 +405,11 @@ int main(int argc, char** argv) {
             throw std::runtime_error("bind failed");
         if (listen(server, 16) < 0) throw std::runtime_error("listen failed");
         auto state = std::make_shared<LatestState>();
+        auto camera = std::make_shared<raksh::LatestCamera>();
         std::thread capture_thread(capture, state, std::cref(options));
+        std::thread camera_thread(raksh::capture_emeet, camera, options.camera_device,
+                                  options.camera_width, options.camera_height,
+                                  options.camera_fps, std::cref(stop_requested));
         std::cerr << "state=serving bind=" << options.bind_address
                   << " port=" << options.port << "\n";
         const auto started = std::chrono::steady_clock::now();
@@ -369,10 +423,11 @@ int main(int argc, char** argv) {
             if (ready <= 0) continue;
             const int client = accept(server, nullptr, nullptr);
             if (client >= 0)
-                std::thread(handle_client, client, state, options.web_root).detach();
+                std::thread(handle_client, client, state, camera, options.web_root).detach();
         }
-        stop_requested.store(true); state->wake(); close(server);
+        stop_requested.store(true); state->wake(); camera->wake(); close(server);
         capture_thread.join();
+        camera_thread.join();
         std::cerr << "state=stopped\n";
         return 0;
     } catch (const std::exception& error) {

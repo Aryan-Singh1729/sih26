@@ -16,6 +16,10 @@ const nearestNode = document.querySelector("#nearest");
 const frameNode = document.querySelector("#frame");
 const ageNode = document.querySelector("#age");
 const rayCountNode = document.querySelector("#ray-count");
+const cameraStatusNode = document.querySelector("#camera-status");
+const cameraFeed = document.querySelector("#camera-feed");
+const cameraViewport = document.querySelector(".camera-viewport");
+const cameraPlaceholder = document.querySelector("#camera-placeholder p");
 
 let telemetry = null;
 let lastMessageAt = 0;
@@ -76,6 +80,32 @@ const stream = new EventSource("/events");
 stream.addEventListener("telemetry", acceptTelemetry);
 stream.onopen = () => { if (!telemetry) setStatus("starting"); };
 stream.onerror = () => setStatus("disconnected");
+
+function setCameraStatus(state) {
+  const normalized = state === "live" ? "live" : state === "stale" ? "stale" :
+    state === "starting" ? "starting" : "disconnected";
+  cameraStatusNode.className = `status ${normalized}`;
+  cameraStatusNode.textContent = normalized.toUpperCase();
+  cameraViewport.classList.toggle("live", normalized === "live");
+  if (normalized !== "live") cameraPlaceholder.textContent = `CAMERA ${normalized.toUpperCase()}`;
+}
+
+cameraFeed.addEventListener("load", () => cameraViewport.classList.add("live"));
+cameraFeed.addEventListener("error", () => setCameraStatus("disconnected"));
+
+async function refreshHealth() {
+  try {
+    const response = await fetch("/health", { cache: "no-store" });
+    if (!response.ok) throw new Error("health unavailable");
+    const health = await response.json();
+    setCameraStatus(health.emeet_state || "disconnected");
+  } catch {
+    setCameraStatus("disconnected");
+  }
+}
+
+refreshHealth();
+setInterval(refreshHealth, 1000);
 
 function fitCanvas() {
   const ratio = Math.min(window.devicePixelRatio || 1, 2);

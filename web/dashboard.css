@@ -91,9 +91,24 @@ h1 small { color: var(--muted); font-size: 11px; font-weight: 500; }
   font: 600 8px/23px ui-monospace, monospace;
   letter-spacing: .12em;
 }
-.camera-placeholder {
+.camera-viewport {
   position: relative;
   height: calc(100% - 56px);
+  overflow: hidden;
+  background: #04090d;
+}
+.camera-viewport img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+.camera-viewport.live img { opacity: 1; }
+.camera-placeholder {
+  position: absolute;
+  inset: 0;
   display: grid;
   place-content: center;
   text-align: center;
@@ -104,6 +119,7 @@ h1 small { color: var(--muted); font-size: 11px; font-weight: 500; }
     radial-gradient(circle at 50% 65%, rgba(74,150,170,.12), transparent 58%);
   background-size: 24px 24px, 24px 24px, auto;
 }
+.camera-viewport.live .camera-placeholder { display: none; }
 .camera-placeholder p { margin: 8px 0 3px; color: #80a8b1; font: 700 11px ui-monospace, monospace; letter-spacing: .14em; }
 .camera-placeholder span { color: #536b73; font-size: 10px; }
 .camera-reticle { width: 42px; height: 28px; margin: auto; border: 1px solid #376978; border-radius: 4px; position: relative; }
