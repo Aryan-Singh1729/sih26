@@ -15,6 +15,7 @@
 #include <csignal>
 #include <cstdint>
 #include <cstring>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <mutex>
@@ -41,6 +42,7 @@ struct Options {
     std::string bind_address{"127.0.0.1"};
     unsigned port{8080};
     unsigned duration_seconds{0};
+    std::string web_root{"web"};
 };
 
 Options parse_options(int argc, char** argv) {
@@ -55,6 +57,7 @@ Options parse_options(int argc, char** argv) {
         else if (argument == "--bind") result.bind_address = value();
         else if (argument == "--port") result.port = std::stoul(value());
         else if (argument == "--duration-seconds") result.duration_seconds = std::stoul(value());
+        else if (argument == "--web-root") result.web_root = value();
         else throw std::invalid_argument("unknown option: " + argument);
     }
     if (result.port == 0 || result.port > 65535) throw std::invalid_argument("invalid port");
@@ -192,14 +195,50 @@ void respond(int socket, const char* status, const char* type, const std::string
     send_all(socket, response.str());
 }
 
-void handle_client(int socket, std::shared_ptr<LatestState> state) {
+bool read_file(const std::string& path, std::string& content) {
+    std::ifstream file(path, std::ios::binary);
+    if (!file) return false;
+    std::ostringstream buffer;
+    buffer << file.rdbuf();
+    content = buffer.str();
+    return true;
+}
+
+bool serve_dashboard_asset(int socket, const std::string& request,
+                           const std::string& web_root) {
+    struct Asset { const char* route; const char* file; const char* type; };
+    static constexpr Asset assets[] = {
+        {"GET / ", "index.html", "text/html; charset=utf-8"},
+        {"GET /index.html ", "index.html", "text/html; charset=utf-8"},
+        {"GET /dashboard.css ", "dashboard.css", "text/css; charset=utf-8"},
+        {"GET /dashboard.js ", "dashboard.js", "text/javascript; charset=utf-8"},
+    };
+    for (const auto& asset : assets) {
+        if (request.rfind(asset.route, 0) != 0) continue;
+        std::string content;
+        const std::string separator = web_root.empty() || web_root.back() == '/' ? "" : "/";
+        if (!read_file(web_root + separator + asset.file, content)) {
+            respond(socket, "503 Service Unavailable", "application/json",
+                    "{\"error\":\"dashboard_asset_unavailable\"}");
+        } else {
+            respond(socket, "200 OK", asset.type, content);
+        }
+        return true;
+    }
+    return false;
+}
+
+void handle_client(int socket, std::shared_ptr<LatestState> state,
+                   std::string web_root) {
     timeval timeout{2, 0};
     setsockopt(socket, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
     char buffer[4096]{};
     const auto count = recv(socket, buffer, sizeof(buffer) - 1, 0);
     if (count <= 0) { close(socket); return; }
     const std::string request(buffer, static_cast<std::size_t>(count));
-    if (request.rfind("GET /health ", 0) == 0) {
+    if (serve_dashboard_asset(socket, request, web_root)) {
+        // Response already sent.
+    } else if (request.rfind("GET /health ", 0) == 0) {
         respond(socket, "200 OK", "application/json", health_json(state->get()));
     } else if (request.rfind("GET /events ", 0) == 0) {
         if (!send_all(socket,
@@ -329,7 +368,8 @@ int main(int argc, char** argv) {
             const auto ready = select(server + 1, &set, nullptr, nullptr, &timeout);
             if (ready <= 0) continue;
             const int client = accept(server, nullptr, nullptr);
-            if (client >= 0) std::thread(handle_client, client, state).detach();
+            if (client >= 0)
+                std::thread(handle_client, client, state, options.web_root).detach();
         }
         stop_requested.store(true); state->wake(); close(server);
         capture_thread.join();

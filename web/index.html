@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Raksh · Live Perception</title>
+  <link rel="stylesheet" href="/dashboard.css">
+</head>
+<body>
+  <main class="dashboard" aria-label="Raksh live perception dashboard">
+    <canvas id="radar" aria-label="Top-down live depth rays"></canvas>
+
+    <section class="sensor-deck">
+      <article class="panel cone-panel">
+        <header>
+          <div>
+            <span class="eyebrow">SR300 PERCEPTION</span>
+            <h1>Depth cone <small>16 × 6</small></h1>
+          </div>
+          <span class="status starting" data-status>STARTING</span>
+        </header>
+        <div id="depth-cone" class="depth-cone" aria-label="16 by 6 depth grid"></div>
+        <footer><span>LEFT</span><span>FORWARD VIEW</span><span>RIGHT</span></footer>
+      </article>
+
+      <article class="panel camera-panel">
+        <header>
+          <div>
+            <span class="eyebrow">FRONT CAMERA</span>
+            <h2>EMEET C950</h2>
+          </div>
+          <span class="status unavailable">CAMERA</span>
+        </header>
+        <div class="camera-placeholder">
+          <div class="camera-reticle" aria-hidden="true"></div>
+          <p>LIVE CAMERA RESERVED</p>
+          <span>Video integration follows in Camera</span>
+        </div>
+      </article>
+    </section>
+
+    <section class="telemetry" aria-label="Live telemetry summary">
+      <div><span>DEPTH</span><strong id="nearest">—</strong></div>
+      <div><span>FRAME</span><strong id="frame">—</strong></div>
+      <div><span>AGE</span><strong id="age">—</strong></div>
+      <div><span>RAYS</span><strong id="ray-count">0 / 48</strong></div>
+    </section>
+
+    <div class="legend" aria-label="Risk color legend">
+      <span><i class="critical"></i>Critical</span>
+      <span><i class="close"></i>Close</span>
+      <span><i class="intermediate"></i>Intermediate</span>
+      <span><i class="clear"></i>Clear</span>
+      <span><i class="invalid"></i>Unknown</span>
+    </div>
+
+    <div class="brand"><strong>RAKSH</strong><span>LIVE PERCEPTION</span></div>
+  </main>
+  <script src="/dashboard.js" defer></script>
+</body>
+</html>

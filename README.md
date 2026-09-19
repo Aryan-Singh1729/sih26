@@ -62,7 +62,7 @@ Bind to the UNO Q's actual LAN address so the dashboard laptop can connect:
 
 ```bash
 ./build/raksh_dashboard_server \
-  --serial 617205001375 --bind 10.143.116.243 --port 8080
+  --serial 617205001375 --bind 10.143.116.243 --port 8080 --web-root web
 ```
 
 The read-only endpoints are `GET /health` and `GET /events`. The latter is a
@@ -70,3 +70,7 @@ Server-Sent Events stream carrying schema version 1 at approximately 10 Hz.
 There are no control or motor endpoints. See
 [the Server notes](docs/dashboard-server.md) for the message contract and test
 evidence.
+
+Open `http://10.143.116.243:8080/` on the dashboard laptop for the Dashboard
+top-down ray display and live 16×6 depth cone. The EMEET panel is deliberately
+marked unavailable until its independent Camera video pipeline is added.
