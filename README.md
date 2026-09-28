@@ -1,6 +1,6 @@
-# Raksh Live Perception Dashboard
+# Live Perception Dashboard for UGV
 
-Raksh is a real-time perception dashboard for an Arduino UNO Q rover. It combines
+A real-time perception dashboard for an Arduino UNO Q based rover for demonstration purpose. It combines
 an Intel RealSense SR300 depth stream with a front-facing EMEET C950 camera and
 presents the result as a browser-based driving view:
 
@@ -111,5 +111,3 @@ scripts/    build, launch, diagnostics, and validation tools
 tests/      deterministic native tests
 ```
 
-Before driving, raise the wheels and verify every keyboard direction. Keep the
-rover within reach of an emergency stop during hardware testing.
