@@ -1,4 +1,4 @@
-# Deployment — calibration, hardening, and operations
+# Calibration, hardening, and operations
 
 Implementation date: 2026-09-19
 

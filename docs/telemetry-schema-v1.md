@@ -1,6 +1,6 @@
 # Raksh telemetry schema version 1
 
-Deployment freezes the dashboard telemetry contract at `schema_version: 1`.
+The dashboard telemetry contract is frozen at `schema_version: 1`.
 Fields may be added compatibly, but existing field names, meanings, units, and
 risk labels must not change without introducing a new schema version.
 

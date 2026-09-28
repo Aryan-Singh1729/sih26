@@ -1,95 +1,127 @@
-# Raksh depth acquisition service
+# Raksh Live Perception Dashboard
 
-This repository contains the Hardware hardware inventory, the Depth SR300
-depth acquisition service, Perception perception products, and the Server local
-HTTP/SSE data server. Browser rendering, webcam streaming, and robot controls
-are intentionally not included yet.
+Raksh is a real-time perception dashboard for an Arduino UNO Q rover. It combines
+an Intel RealSense SR300 depth stream with a front-facing EMEET C950 camera and
+presents the result as a browser-based driving view:
 
-## Build on the Arduino UNO Q
+- a live 16 × 6 depth grid with distance-based risk colours;
+- a top-down ray view showing obstacle bearings and an open corridor;
+- a low-latency MJPEG feed from the rover's front camera;
+- explicit live, stale, disconnected, and unknown-data states;
+- a full-screen depth grid for the rover's physical LCD.
 
-The SD card must be mounted at `/mnt/sdcard`, with the verified librealsense
-v2.50.0 build at `/mnt/sdcard/librealsense/build`.
+The perception pipeline never treats invalid depth samples as measured free
+space. Sensor capture, browser delivery, and rendering are kept independent so
+a slow client cannot block either camera.
+
+## Hardware
+
+- Arduino UNO Q
+- Intel RealSense SR300 (`617205001375` in the reference setup)
+- EMEET C950 USB camera
+- front LCD used for the depth grid
+- SD card mounted at `/mnt/sdcard`
+
+The UNO Q build expects librealsense 2.50.0 at
+`/mnt/sdcard/librealsense`, with its compiled library in
+`/mnt/sdcard/librealsense/build`.
+
+## Build on the UNO Q
 
 ```bash
 bash scripts/build.sh
 ```
 
-The build script compiles the deterministic tests, runs them, and creates:
+The script configures CMake, compiles the services, and runs the deterministic
+test suite. The resulting executables are written to `build/`:
 
 ```text
 build/raksh_depth_service
+build/raksh_perception_service
+build/raksh_dashboard_server
 ```
 
-## Run
+## Start the dashboard
 
-Run until `Ctrl+C`:
-
-```bash
-./build/raksh_depth_service --serial 617205001375
-```
-
-Run the repeatable 15-minute acceptance check:
-
-```bash
-bash scripts/validate_depth.sh
-```
-
-Run the guarded USB disconnect/rebind and restart check:
-
-```bash
-bash scripts/test_depth_disconnect.sh
-```
-
-All normal diagnostics are concise text records. An invalid depth region is
-printed as `distance_m=unknown`; it is never converted to zero metres or clear
-space. See [the Depth notes](docs/depth-service.md) for the diagnostic
-contract and physical test checklist.
-
-## Perception live perception
-
-```bash
-./build/raksh_perception_service --output-hz 10
-python3 scripts/validate_perception.py ./build/raksh_perception_service
-```
-
-The service writes one JSON object per current live update with exactly 96
-depth-cone cells, 48 rays, and optional obstacle clusters. Details and current
-calibration limits are in [the Perception notes](docs/perception.md).
-
-## Server local data server
-
-Bind to the UNO Q's actual LAN address so the dashboard laptop can connect:
-
-```bash
-./build/raksh_dashboard_server \
-  --serial 617205001375 --bind 10.143.116.243 --port 8080 --web-root web
-```
-
-The read-only endpoints are `GET /health` and `GET /events`. The latter is a
-Server-Sent Events stream carrying schema version 1 at approximately 10 Hz.
-There are no control or motor endpoints. See
-[the Server notes](docs/dashboard-server.md) for the message contract and test
-evidence.
-
-Open `http://10.143.116.243:8080/` on the dashboard laptop for the top-down ray
-display, live 16×6 depth cone, and Camera EMEET camera feed. The camera uses
-the stable by-id device path and native MJPEG, so frames are not re-encoded on
-the UNO Q.
-
-Validate both physical cameras together:
-
-```bash
-python scripts/validate_camera.py http://10.143.116.243:8080 --frames 10
-```
-
-## Final hardened launcher
-
-Copy and calibrate the runtime configuration, then use the preflight launcher:
+For normal operation, copy the example configuration and use the guarded
+launcher:
 
 ```bash
 cp config/raksh-dashboard.conf.example config/raksh-dashboard.conf
 bash scripts/run_dashboard.sh config/raksh-dashboard.conf
 ```
 
-The complete calibration, acceptance, and troubleshooting procedure is in
-[the Deployment operations guide](docs/operations.md).
+Then open the address printed by the launcher, for example:
+
+```text
+http://10.143.116.243:8080/
+```
+
+The server can also be started directly:
+
+```bash
+./build/raksh_dashboard_server \
+  --serial 617205001375 \
+  --bind 0.0.0.0 \
+  --port 8080 \
+  --web-root web
+```
+
+Use an IPv4 bind address. `0.0.0.0` exposes the dashboard on every IPv4
+interface; replace it with the UNO Q's LAN address when a restricted bind is
+preferred.
+
+## HTTP interface
+
+- `GET /` serves the dashboard.
+- `GET /health` reports service and sensor health.
+- `GET /events` streams depth telemetry as Server-Sent Events.
+- `GET /camera.mjpeg` streams the front camera.
+- `GET /camera.jpg` returns the most recent camera frame.
+
+Telemetry uses `schema_version: 1`; its contract is documented in
+[docs/telemetry-schema-v1.md](docs/telemetry-schema-v1.md).
+
+## Validation
+
+Run the checks independently so failures are easy to isolate:
+
+```bash
+bash scripts/validate_depth.sh
+python3 scripts/validate_perception.py ./build/raksh_perception_service
+python3 scripts/validate_server.py http://127.0.0.1:8080 --seconds 30
+python3 scripts/validate_camera.py http://127.0.0.1:8080 --frames 10
+python3 scripts/validate_deployment.py http://127.0.0.1:8080 --seconds 7200
+```
+
+USB recovery checks are available separately:
+
+```bash
+bash scripts/test_depth_disconnect.sh
+bash scripts/test_camera_disconnect.sh http://127.0.0.1:8080
+```
+
+## Project layout
+
+```text
+include/    C++ interfaces for depth, perception, and camera capture
+src/        native capture, perception, and HTTP server implementations
+web/        browser dashboard
+config/     runtime configuration examples
+scripts/    build, launch, diagnostics, and validation tools
+tests/      deterministic native tests
+docs/       hardware, protocol, calibration, and operations notes
+```
+
+## Documentation
+
+- [Hardware baseline](docs/hardware-baseline.md)
+- [Depth acquisition](docs/depth-service.md)
+- [Perception model](docs/perception.md)
+- [Dashboard server](docs/dashboard-server.md)
+- [Dashboard UI](docs/dashboard-ui.md)
+- [Camera streaming](docs/camera-streaming.md)
+- [Calibration and operations](docs/operations.md)
+
+Before driving, raise the wheels and verify every keyboard direction. Keep the
+rover within reach of an emergency stop during hardware testing.

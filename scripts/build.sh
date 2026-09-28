@@ -9,7 +9,7 @@ realsense_build="${realsense_source}/build"
 if [[ ! -f "${realsense_source}/include/librealsense2/rs.hpp" ]] ||
    [[ ! -f "${realsense_build}/librealsense2.so.2.50.0" ]]; then
     printf 'ERROR: expected pinned librealsense 2.50.0 source/build under %s\n' "${realsense_source}" >&2
-    printf 'Mount /mnt/sdcard and verify the Hardware paths before building.\n' >&2
+    printf 'Mount /mnt/sdcard and verify the configured librealsense paths before building.\n' >&2
     exit 2
 fi
 

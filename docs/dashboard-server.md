@@ -1,14 +1,14 @@
-# Server — local dashboard data server
+# Local dashboard data server
 
 Implementation and validation date: 2026-09-19
 
 ## Delivered
 
 - `raksh_dashboard_server`, a small C++ HTTP server integrated with the live
-  SR300 capture and Perception perception pipeline.
+  SR300 capture and perception pipeline.
 - `GET /health`, reporting service/SR300 state, last frame number and age,
   measured depth FPS, and the EMEET placeholder
-  `unavailable_until_milestone_6`.
+  an explicit unavailable state.
 - `GET /events`, a one-way Server-Sent Events stream at approximately 10 Hz.
 - A versioned schema containing live frame identity and freshness, display
   range/FOV, exactly 96 depth-cone cells, exactly 48 rays, and obstacle
@@ -23,7 +23,7 @@ Implementation and validation date: 2026-09-19
 - Read-only behavior. Unknown paths, including `/motor`, return HTTP 404.
 
 No random, simulated, or placeholder depth is used. The EMEET value is a
-clearly labelled status placeholder only; camera transport belongs to Camera.
+clearly labelled status placeholder whenever camera transport is unavailable.
 
 ## Build and run on the UNO Q
 
@@ -85,9 +85,9 @@ the failure state. Consumers must treat absent/invalid measurements as unknown.
   over 10 seconds. Its two normal clients and deliberately delayed client all
   received advancing frames with exact 96-cell/48-ray payloads.
 - The acquisition path's physical disconnect/rebind behavior was already
-  verified in Depth. Server maps a capture exception to an explicit
+  verified by the depth acceptance test. The server maps a capture exception to an explicit
   disconnected/stale event rather than fabricated measurements or a crash.
 - Source inspection found no random-data generator and no motor/control route.
 
-Server intentionally serves data only. The Dashboard browser will render the
-ray view and depth-cone panel; Camera will add the live EMEET feed.
+The server exposes live telemetry for the browser ray view, depth-cone panel,
+and EMEET camera feed.

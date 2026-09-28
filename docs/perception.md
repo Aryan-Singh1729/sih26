@@ -1,4 +1,4 @@
-# Perception — live perception products
+# Live perception products
 
 Implementation and validation date: 2026-09-19
 
@@ -11,7 +11,7 @@ Implementation and validation date: 2026-09-19
 - Metric bearing and ground-plane range, configurable valid range, risk bands,
   floor-plane rejection, temporal smoothing/hysteresis, and adjacent-ray
   obstacle clusters.
-- JSON Lines output suitable for the Server local data server. Invalid depth
+- JSON Lines output suitable for the local data server. Invalid depth
   is emitted as `valid=false`, `distance_m=null`/`range_m=null`, and
   `risk="invalid"`; no random or simulated values exist in the live path.
 

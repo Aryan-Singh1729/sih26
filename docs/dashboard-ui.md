@@ -1,4 +1,4 @@
-# Dashboard — browser ray view and depth cone
+# Browser ray view and depth cone
 
 Implementation and validation date: 2026-09-19
 
@@ -19,7 +19,7 @@ Implementation and validation date: 2026-09-19
   are never drawn as a maximum-range clear path.
 - Visible `STARTING`, `LIVE`, `STALE`, and `DISCONNECTED` states. A local timer
   changes a formerly live view to stale when telemetry is older than 1.5 s.
-- A reserved EMEET panel explicitly labelled `CAMERA`; it does not show fake
+- An EMEET panel with an explicit unavailable state; it does not show fake
   video.
 - No keyboard listeners, motor commands, or control endpoints.
 
@@ -67,6 +67,5 @@ on narrow screens without enabling any drive controls.
 - Source checks found no random-data generation, keyboard listeners, or motor
   route in the dashboard.
 
-The camera area remains intentionally inactive until Camera. That milestone will
-connect it to the physical EMEET C950 without coupling webcam failure to depth
-capture.
+The camera area connects to the physical EMEET C950 without coupling webcam
+failure to depth capture, and shows an explicit placeholder when unavailable.

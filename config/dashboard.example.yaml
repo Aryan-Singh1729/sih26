@@ -1,8 +1,7 @@
 # Raksh dashboard hardware configuration.
 #
-# Hardware records identities and verified capture modes only. Perception and
-# safety thresholds are deliberately omitted until physical calibration in
-# Perception.
+# Verified device identities and capture modes for the reference rover.
+# Safety thresholds should be set during physical calibration.
 
 schema_version: 1
 

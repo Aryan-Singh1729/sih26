@@ -1,4 +1,4 @@
-# Camera — live EMEET camera panel
+# Live EMEET camera panel
 
 Implementation and validation date: 2026-09-19
 
@@ -67,4 +67,4 @@ Evidence from the physical UNO Q:
   and EMEET to live at 30.06 and 16.72 FPS respectively.
 
 The current recovery contract after physical EMEET reconnection is an explicit
-service restart. Automatic reopen can be considered during Deployment hardening.
+service restart. Automatic reopen is covered by deployment hardening.

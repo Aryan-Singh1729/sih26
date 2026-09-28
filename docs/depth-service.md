@@ -1,10 +1,10 @@
-# Depth — reliable live depth acquisition
+# Reliable live depth acquisition
 
 Implementation date: 2026-09-19
 
 ## Scope and status
 
-The Depth code is implemented. It deliberately contains no browser server,
+The depth acquisition service is implemented independently from the browser server,
 rays, 16×6 depth cone, obstacle clustering, EMEET capture, or motor controls.
 
 The service has been compiled and tested natively on the UNO Q. The deterministic
@@ -46,7 +46,7 @@ This prevents downstream code from treating no-return pixels as free space.
 
 ## Build and deterministic tests on the UNO Q
 
-The Hardware source and build trees are used directly. The generated
+The repository source and build trees are used directly. The generated
 `realsense2Config.cmake` contains an install-prefix path and is not relocatable
 at `/mnt/sdcard`; the Raksh build therefore imports the verified v2.50.0 shared
 library and headers without modifying librealsense:
@@ -127,7 +127,7 @@ Run these after the build/tests pass:
 
 ## Acceptance record
 
-- Source-level Depth implementation: COMPLETE (2026-09-19).
+- Source-level implementation: COMPLETE (2026-09-19).
 - Native ARM64 configure/build: PASS. GCC 14.2.0 linked the service against
   `/mnt/sdcard/librealsense/build/librealsense2.so.2.50.0`.
 - Deterministic C++ tests on ARM64: PASS, 2/2 tests, zero failures.
@@ -149,7 +149,7 @@ Run these after the build/tests pass:
 - Measured-distance left/center/right check: PENDING — requires placing a
   tape-measured physical target in each region; the unattended scene supplied
   no valid returns at those sample locations.
-- Depth exit gate: PASS for its stated requirements (15-minute stability,
+- Acceptance gate: PASS for its stated requirements (15-minute stability,
   bounded latest-state design, stable memory, and safe invalid-depth handling).
 
 Test artifacts on the UNO Q:

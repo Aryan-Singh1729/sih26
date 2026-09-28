@@ -1,8 +1,8 @@
-# Hardware hardware and software baseline
+# Hardware and software baseline
 
 Date: 2026-09-19
 
-This document records the live UNO Q inspection used to gate Hardware of the Raksh perception dashboard. Commands were executed over SSH against `ArduinoQ`. Raw camera frames were not recorded to the SD card.
+This document records the live UNO Q inspection performed for the Raksh perception dashboard. Commands were executed over SSH against `ArduinoQ`. Raw camera frames were not recorded to the SD card.
 
 ## System
 
@@ -26,7 +26,7 @@ The root filesystem has little headroom. Dashboard builds, generated artifacts, 
 - Required mount point: `/mnt/sdcard`
 - Usage after mounting: 1.3 GiB used, 2.2 GiB available (36% used)
 
-The device was present but `/mnt/sdcard` was not mounted at the start of Hardware. It was mounted explicitly with:
+The device was present but `/mnt/sdcard` was not initially mounted. It was mounted explicitly with:
 
 ```sh
 sudo mount /dev/sda1 /mnt/sdcard
@@ -54,14 +54,14 @@ The RealSense build contains a generated CMake configuration at:
 /mnt/sdcard/librealsense/build/realsense2Config.cmake
 ```
 
-It is not installed in the system pkg-config search path. Depth found that
+It is not installed in the system pkg-config search path. Inspection found that
 the generated configuration is not relocatable at the SD-card location: it
 derives `/mnt/include`, which does not exist. Raksh builds must explicitly use
 the source headers and the pinned build-tree shared library instead.
 
 ### Depth endurance result
 
-The executable `/mnt/sdcard/librealsense/build/test_sr300` was found to be stale and did not match `test_sr300.cpp`; it still performed the old single-pixel check. It was not overwritten. The current robust 11x11 median source was compiled to `/tmp/raksh_hardware_depth_probe` for the test.
+The executable `/mnt/sdcard/librealsense/build/test_sr300` was found to be stale and did not match `test_sr300.cpp`; it still performed the old single-pixel check. It was not overwritten. The current robust 11x11 median source was compiled to `/tmp/raksh_depth_probe` for the test.
 
 The 65-second test produced:
 
@@ -73,7 +73,7 @@ The 65-second test produced:
 - No change in used SD-card blocks
 - Clean camera shutdown after the timeout signal
 
-The result proves that the live stream is stable and that zero/invalid depth is not converted into clear space. It also shows that the current center view was almost entirely outside the SR300's valid range during this unattended test. Physical target-based distance calibration remains a Depth/3 activity.
+The result proves that the live stream is stable and that zero/invalid depth is not converted into clear space. It also shows that the current center view was almost entirely outside the SR300's valid range during this unattended test. Physical target-based distance calibration remains a separate calibration task.
 
 ## EMEET webcam
 
@@ -97,9 +97,9 @@ The primary node supports native MJPEG at 30 FPS for:
 
 It also supports uncompressed YUYV at 640x480 and 640x360 at 30 FPS. The selected baseline mode is native MJPEG, 640x360, requested at 30 FPS.
 
-A single 640x360 JPEG frame was captured to `/tmp` and copied to the workspace as `emeet-camera-preview.jpg`. Visual inspection confirms that it is a real floor-level view from the robot's front-facing EMEET camera, not the SR300 RGB stream.
+A single 640x360 JPEG frame was captured to `/tmp` for visual inspection. It confirmed a real floor-level view from the robot's front-facing EMEET camera, not the SR300 RGB stream.
 
-The camera accepted a 30 FPS request but delivered approximately 20 FPS with its current automatic-exposure settings. Camera must use measured FPS rather than assuming the requested value.
+The camera accepted a 30 FPS request but delivered approximately 20 FPS with its current automatic-exposure settings. Runtime monitoring must use measured FPS rather than assuming the requested value.
 
 ### Webcam endurance result
 
@@ -153,7 +153,7 @@ Not present as system development packages:
 - libjpeg development headers/pkg-config package
 - libwebsockets or another dedicated WebSocket server library
 
-The Server baseline decision is to use the existing POSIX socket capability with HTTP plus Server-Sent Events unless a later implementation review demonstrates a need for a dedicated networking dependency. EMEET MJPEG frames can be passed through without JPEG re-encoding.
+The networking decision is to use the existing POSIX socket capability with HTTP plus Server-Sent Events unless a later implementation review demonstrates a need for a dedicated dependency. EMEET MJPEG frames can be passed through without JPEG re-encoding.
 
 ## Video-node separation
 
@@ -165,7 +165,7 @@ The Server baseline decision is to use the existing POSIX socket capability with
 
 Only the EMEET by-id `video-index0` link is allowed in the dashboard configuration. This avoids collisions when `/dev/videoN` numbering changes.
 
-## Hardware test status
+## Test status
 
 - System and storage inventory: PASS
 - Librealsense version and SR300 enumeration: PASS
@@ -179,4 +179,4 @@ Only the EMEET by-id `video-index0` link is allowed in the dashboard configurati
 
 ## Exit-gate result
 
-**PASS.** Both sensors operate simultaneously, the EMEET camera is selected through a stable by-id path, invalid SR300 readings remain explicitly unknown, and the tests did not grow SD-card usage. Depth may begin only on a separate user instruction.
+**PASS.** Both sensors operate simultaneously, the EMEET camera is selected through a stable by-id path, invalid SR300 readings remain explicitly unknown, and the tests did not grow SD-card usage.
