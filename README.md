@@ -79,8 +79,7 @@ preferred.
 - `GET /camera.mjpeg` streams the front camera.
 - `GET /camera.jpg` returns the most recent camera frame.
 
-Telemetry uses `schema_version: 1`; its contract is documented in
-[docs/telemetry-schema-v1.md](docs/telemetry-schema-v1.md).
+Telemetry uses the stable `schema_version: 1` contract.
 
 ## Validation
 
@@ -110,18 +109,7 @@ web/        browser dashboard
 config/     runtime configuration examples
 scripts/    build, launch, diagnostics, and validation tools
 tests/      deterministic native tests
-docs/       hardware, protocol, calibration, and operations notes
 ```
-
-## Documentation
-
-- [Hardware baseline](docs/hardware-baseline.md)
-- [Depth acquisition](docs/depth-service.md)
-- [Perception model](docs/perception.md)
-- [Dashboard server](docs/dashboard-server.md)
-- [Dashboard UI](docs/dashboard-ui.md)
-- [Camera streaming](docs/camera-streaming.md)
-- [Calibration and operations](docs/operations.md)
 
 Before driving, raise the wheels and verify every keyboard direction. Keep the
 rover within reach of an emergency stop during hardware testing.
